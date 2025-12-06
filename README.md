@@ -43,6 +43,7 @@ See [SETUP.md](SETUP.md) for detailed setup instructions.
 
 **⚠️ Important**: Sensitive files (`GoogleService-Info.plist` and `APIKeys.swift`) are excluded from version control for security.
 
+
 ## License
 
 This project is part of a class assignment.
