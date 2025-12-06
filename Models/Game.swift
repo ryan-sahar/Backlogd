@@ -43,48 +43,4 @@ struct Game: Identifiable, Hashable, Codable {
         self.coverURL = coverURL
         self.releaseYear = releaseYear
     }
-    
-    /// Sample data used for local search and previews.
-    static let mockGames: [Game] = [
-        Game(
-            id: 1,
-            title: "Elden Ring",
-            platforms: ["PS5", "Xbox Series X|S", "PC"],
-            genres: ["Action RPG", "Open World"],
-            description: "A dark fantasy open-world action RPG from FromSoftware, featuring challenging combat, exploration, and deep lore.",
-            releaseYear: 2022
-        ),
-        Game(
-            id: 2,
-            title: "The Legend of Zelda: Tears of the Kingdom",
-            platforms: ["Nintendo Switch"],
-            genres: ["Action Adventure"],
-            description: "Link returns to Hyrule in a sprawling adventure that spans both the surface and the skies, with new abilities and sandbox systems.",
-            releaseYear: 2023
-        ),
-        Game(
-            id: 3,
-            title: "Hades",
-            platforms: ["Switch", "PC", "PS5", "Xbox"],
-            genres: ["Roguelike", "Action"],
-            description: "Battle out of the Underworld in this fast-paced roguelike, combining tight combat with strong storytelling and voice acting.",
-            releaseYear: 2020
-        ),
-        Game(
-            id: 4,
-            title: "Baldur's Gate 3",
-            platforms: ["PC", "PS5", "Xbox Series X|S"],
-            genres: ["RPG"],
-            description: "A cinematic, choice-driven RPG set in the Dungeons & Dragons universe, with turn-based combat and deep character customization.",
-            releaseYear: 2023
-        ),
-        Game(
-            id: 5,
-            title: "Stardew Valley",
-            platforms: ["Switch", "PC", "PS4", "Xbox"],
-            genres: ["Farming", "Simulation"],
-            description: "A cozy farming sim where you restore a rundown farm, befriend villagers, fish, mine, and relax at your own pace.",
-            releaseYear: 2016
-        )
-    ]
 }

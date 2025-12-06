@@ -64,15 +64,15 @@ struct LoginView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding()
                         } else {
-                            Text("Sign In")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding()
+                        Text("Sign In")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding()
                         }
                     }
-                    .background(Color.backlogAccentRed)
-                    .foregroundColor(.white)
-                    .cornerRadius(16)
+                            .background(Color.backlogAccentRed)
+                            .foregroundColor(.white)
+                            .cornerRadius(16)
                     .disabled(authViewModel.isLoading)
                     .padding(.horizontal)
                     
@@ -81,9 +81,9 @@ struct LoginView: View {
                         HStack {
                             Image(systemName: "exclamationmark.circle.fill")
                                 .foregroundColor(.red)
-                            Text("Please enter both email and password.")
-                                .foregroundColor(.red)
-                                .font(.subheadline)
+                        Text("Please enter both email and password.")
+                            .foregroundColor(.red)
+                            .font(.subheadline)
                         }
                         .padding(.horizontal)
                     }
@@ -92,12 +92,12 @@ struct LoginView: View {
                         HStack {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundColor(.red)
-                            Text(authError)
-                                .foregroundColor(.red)
-                                .font(.subheadline)
+                        Text(authError)
+                            .foregroundColor(.red)
+                            .font(.subheadline)
                         }
                         .multilineTextAlignment(.leading)
-                        .padding(.horizontal)
+                            .padding(.horizontal)
                     }
                     
                     NavigationLink {

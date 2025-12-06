@@ -148,6 +148,13 @@ final class GameLogStore: ObservableObject {
             updatedLog.playtimeHours = playtimeHours
             updatedLog.location = location
             updatedLog.updatedAt = Date()
+            // Update game metadata if provided
+            updatedLog.gameTitle = game.title
+            updatedLog.gameCoverURL = game.coverURL
+            updatedLog.gameDescription = game.description
+            updatedLog.gamePlatforms = game.platforms.isEmpty ? nil : game.platforms
+            updatedLog.gameGenres = game.genres.isEmpty ? nil : game.genres
+            updatedLog.gameReleaseYear = game.releaseYear
             
             logService.upsertLog(updatedLog) { [weak self] (result: Result<Void, Error>) in
                 DispatchQueue.main.async {
@@ -174,7 +181,13 @@ final class GameLogStore: ObservableObject {
                 playtimeHours: playtimeHours,
                 createdAt: Date(),
                 updatedAt: Date(),
-                location: location
+                location: location,
+                gameTitle: game.title,
+                gameCoverURL: game.coverURL,
+                gameDescription: game.description,
+                gamePlatforms: game.platforms.isEmpty ? nil : game.platforms,
+                gameGenres: game.genres.isEmpty ? nil : game.genres,
+                gameReleaseYear: game.releaseYear
             )
             
             logService.upsertLog(newLog) { [weak self] (result: Result<Void, Error>) in

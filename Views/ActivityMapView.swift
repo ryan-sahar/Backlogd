@@ -161,11 +161,7 @@ struct ActivityMapView: View {
         
         // If there's only one game, show the game title
         if group.logs.count == 1, let log = group.logs.first {
-            if let game = Game.mockGames.first(where: { $0.id == log.gameId }) {
-                return game.title
-            }
-            // Fallback if game not found
-            return "Game \(log.gameId)"
+            return log.gameTitle ?? "Game \(log.gameId)"
         }
         
         // Multiple games - show location count
@@ -249,10 +245,7 @@ struct LocationGamesView: View {
         
         // If there's only one game, show the game title
         if group.logs.count == 1, let log = group.logs.first {
-            if let game = Game.mockGames.first(where: { $0.id == log.gameId }) {
-                return game.title
-            }
-            return "Game \(log.gameId)"
+            return log.gameTitle ?? "Game \(log.gameId)"
         }
         
         // Multiple games - show location
@@ -334,22 +327,15 @@ struct LocationGamesView: View {
                     } else {
                         List {
                             ForEach(locationGroup.logs.sorted(by: { $0.updatedAt > $1.updatedAt })) { log in
-                                if let game = Game.mockGames.first(where: { $0.id == log.gameId }) {
-                                    NavigationLink {
-                                        GameReviewView(game: game, log: log)
-                                            .environmentObject(logStore)
-                                    } label: {
-                                        LocationGameRow(game: game, log: log)
-                                    }
-                                    .listRowBackground(Color.backlogCard)
-                                } else {
-                                    NavigationLink {
-                                        LocationGameDetailView(log: log)
-                                    } label: {
-                                        LocationGameRowFallback(log: log)
-                                    }
-                                    .listRowBackground(Color.backlogCard)
+                                // Use stored game data from log
+                                let game = log.toGame()
+                                NavigationLink {
+                                    GameReviewView(game: game, log: log)
+                                        .environmentObject(logStore)
+                                } label: {
+                                    LocationGameRow(game: game, log: log)
                                 }
+                                .listRowBackground(Color.backlogCard)
                             }
                         }
                         .scrollContentBackground(.hidden)
@@ -507,13 +493,50 @@ private struct LocationGameRow: View {
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.backlogBackground)
-                .frame(width: 50, height: 50)
-                .overlay(
-                    Image(systemName: "gamecontroller.fill")
-                        .foregroundColor(.backlogSecondary)
-                )
+            // Game cover image
+            if let coverURL = game.coverURL, let url = URL(string: coverURL) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.backlogBackground)
+                            .frame(width: 50, height: 50)
+                            .overlay(
+                                ProgressView()
+                                    .scaleEffect(0.6)
+                                    .tint(.backlogAccentRed)
+                            )
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 50, height: 50)
+                            .clipped()
+                            .cornerRadius(8)
+                    case .failure:
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.backlogBackground)
+                            .frame(width: 50, height: 50)
+                            .overlay(
+                                Image(systemName: "gamecontroller.fill")
+                                    .foregroundColor(.backlogSecondary)
+                            )
+                    @unknown default:
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.backlogBackground)
+                            .frame(width: 50, height: 50)
+                    }
+                }
+            } else {
+                // Placeholder when no cover URL
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.backlogBackground)
+                    .frame(width: 50, height: 50)
+                    .overlay(
+                        Image(systemName: "gamecontroller.fill")
+                            .foregroundColor(.backlogSecondary)
+                    )
+            }
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(game.title)

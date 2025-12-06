@@ -85,15 +85,15 @@ final class UserService {
     ///
     /// - Parameters:
     ///   - userID: Firebase Auth UID
-    ///   - displayName: Optional new display name
-    ///   - bio: Optional new bio
-    ///   - photoURL: Optional new photo URL
+    ///   - displayName: Optional new display name (pass nil to skip)
+    ///   - bio: Optional new bio (pass nil to skip)
+    ///   - photoURL: Optional new photo URL (pass nil to remove, pass .some(nil) to explicitly set to nil)
     ///   - completion: Called with result (success or error)
     func updateUser(
         userID: String,
         displayName: String? = nil,
         bio: String? = nil,
-        photoURL: String? = nil,
+        photoURL: String?? = nil,
         completion: @escaping (Result<Void, Error>) -> Void
     ) {
         var updates: [String: Any] = [:]
@@ -104,8 +104,15 @@ final class UserService {
         if let bio = bio {
             updates["bio"] = bio
         }
-        if let photoURL = photoURL {
-            updates["photoURL"] = photoURL
+        // Handle photoURL: if it's .some(nil), we want to explicitly set it to nil (remove it)
+        // If it's .none, we skip updating it
+        if case .some(let url) = photoURL {
+            if let url = url {
+                updates["photoURL"] = url
+            } else {
+                // Explicitly set to nil to remove the field
+                updates["photoURL"] = NSNull()
+            }
         }
         
         guard !updates.isEmpty else {

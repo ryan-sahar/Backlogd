@@ -231,7 +231,7 @@ struct GameLogSheet: View {
             isSaving = false
             
             if success {
-                dismiss()
+        dismiss()
             } else {
                 saveError = errorMessage ?? "Failed to save log. Please try again."
             }
@@ -240,6 +240,13 @@ struct GameLogSheet: View {
 }
 
 #Preview {
-    GameLogSheet(game: Game.mockGames[0])
+    GameLogSheet(game: Game(
+        id: 1,
+        title: "Elden Ring",
+        platforms: ["PS5", "Xbox Series X|S", "PC"],
+        genres: ["Action RPG", "Open World"],
+        description: "A dark fantasy open-world action RPG from FromSoftware.",
+        releaseYear: 2022
+    ))
         .environmentObject(GameLogStore())
 }

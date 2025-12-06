@@ -76,28 +76,66 @@ struct FeedView: View {
     private var feedList: some View {
         List {
             ForEach(logStore.logs.prefix(20)) { log in
-                // Look up the game from mock data (later from Firestore cache)
-                if let game = Game.mockGames.first(where: { $0.id == log.gameId }) {
-                    NavigationLink {
-                        GameReviewView(game: game, log: log)
-                    } label: {
-                        FeedLogRow(game: game, log: log)
-                    }
+                FeedLogRowWithFetch(log: log)
                     .listRowBackground(Color.backlogCard)
-                } else {
-                    // Fallback: show log even without game data
-                    NavigationLink {
-                        FeedLogDetailView(log: log)
-                    } label: {
-                        FeedLogRowFallback(log: log)
-                    }
-                    .listRowBackground(Color.backlogCard)
-                }
             }
         }
         .scrollContentBackground(.hidden)
         .background(Color.backlogBackground)
         .listStyle(.plain)
+    }
+}
+
+// MARK: - Feed Log Row with Auto-Fetch
+
+private struct FeedLogRowWithFetch: View {
+    let log: GameLog
+    @EnvironmentObject var logStore: GameLogStore
+    @State private var fetchedGame: Game?
+    @State private var isFetching = false
+    
+    var body: some View {
+        let game = fetchedGame ?? log.toGame()
+        return NavigationLink {
+            GameReviewView(game: game, log: log)
+        } label: {
+            FeedLogRow(game: game, log: log)
+        }
+        .onAppear {
+            // If log is missing game title, fetch it from RAWG
+            if log.gameTitle == nil && !isFetching {
+                fetchGameDetails()
+            } else {
+                // Use stored data
+                fetchedGame = log.toGame()
+            }
+        }
+    }
+    
+    private func fetchGameDetails() {
+        isFetching = true
+        GameService.shared.fetchGame(byID: log.gameId) { result in
+            DispatchQueue.main.async {
+                isFetching = false
+                switch result {
+                case .success(let game):
+                    fetchedGame = game
+                    // Update the log in Firestore with the fetched data
+                    // upsertLog will automatically store all game metadata (title, coverURL, description, platforms, genres, releaseYear)
+                    logStore.upsertLog(
+                        for: game,
+                        status: log.status,
+                        rating: log.rating,
+                        reviewText: log.reviewText,
+                        playtimeHours: log.playtimeHours,
+                        location: log.location
+                    )
+                case .failure:
+                    // Keep using placeholder
+                    fetchedGame = log.toGame()
+                }
+            }
+        }
     }
 }
 
@@ -109,14 +147,50 @@ private struct FeedLogRow: View {
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            // Game cover placeholder
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color.backlogCard)
-                .frame(width: 60, height: 60)
-                .overlay(
-                    Image(systemName: "gamecontroller.fill")
-                        .foregroundColor(.backlogSecondary)
-                )
+            // Game cover image
+            if let coverURL = game.coverURL, let url = URL(string: coverURL) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.backlogCard)
+                            .frame(width: 60, height: 60)
+                            .overlay(
+                                ProgressView()
+                                    .scaleEffect(0.7)
+                                    .tint(.backlogAccentRed)
+                            )
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 60, height: 60)
+                            .clipped()
+                            .cornerRadius(10)
+                    case .failure:
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.backlogCard)
+                            .frame(width: 60, height: 60)
+                            .overlay(
+                                Image(systemName: "gamecontroller.fill")
+                                    .foregroundColor(.backlogSecondary)
+                            )
+                    @unknown default:
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.backlogCard)
+                            .frame(width: 60, height: 60)
+                    }
+                }
+            } else {
+                // Placeholder when no cover URL
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.backlogCard)
+                    .frame(width: 60, height: 60)
+                    .overlay(
+                        Image(systemName: "gamecontroller.fill")
+                            .foregroundColor(.backlogSecondary)
+                    )
+            }
             
             VStack(alignment: .leading, spacing: 6) {
                 // Game title

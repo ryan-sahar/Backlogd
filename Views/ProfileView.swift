@@ -22,6 +22,8 @@ struct ProfileView: View {
     @State private var croppedImage: UIImage?
     @State private var isUploadingPhoto = false
     @State private var uploadError: String?
+    @State private var isRemovingPhoto = false
+    @State private var showRemovePhotoAlert = false
     
     init(logStore: GameLogStore) {
         _viewModel = StateObject(wrappedValue: ProfileViewModel(logStore: logStore))
@@ -70,10 +72,43 @@ struct ProfileView: View {
                     Text(error)
                 }
             }
+            .alert("Remove Photo", isPresented: $showRemovePhotoAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Remove", role: .destructive) {
+                    removeProfilePhoto()
+                }
+            } message: {
+                Text("Are you sure you want to remove your profile picture?")
+            }
         }
     }
     
     // MARK: - Image Upload
+    
+    private func removeProfilePhoto() {
+        guard let userID = authViewModel.currentUserID else { return }
+        guard let photoURL = viewModel.user?.photoURL else { return }
+        
+        isRemovingPhoto = true
+        
+        // Delete the image from Storage first
+        StorageService.shared.deleteProfileImage(urlString: photoURL) { [self] result in
+            // Continue even if deletion fails (image might not exist)
+            // Update Firestore to remove photoURL
+            self.viewModel.removePhoto(userID: userID) { (updateResult: Result<Void, Error>) in
+                DispatchQueue.main.async {
+                    self.isRemovingPhoto = false
+                    switch updateResult {
+                    case .success:
+                        // Success - user will be reloaded by removePhoto
+                        break
+                    case .failure(let error):
+                        self.uploadError = "Failed to remove photo: \(error.localizedDescription)"
+                    }
+                }
+            }
+        }
+    }
     
     private func uploadProfileImage(_ image: UIImage) {
         guard let userID = authViewModel.currentUserID else { return }
@@ -121,7 +156,7 @@ struct ProfileView: View {
     
     private var profileHeader: some View {
         VStack(spacing: 16) {
-            // Avatar with tap to edit
+            // Avatar with tap to edit and long press to remove
             Button {
                 showImagePicker = true
             } label: {
@@ -152,13 +187,22 @@ struct ProfileView: View {
                         )
                         .opacity(isUploadingPhoto ? 1 : 0)
                     
-                    if isUploadingPhoto {
+                    if isUploadingPhoto || isRemovingPhoto {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                     }
                 }
             }
-            .disabled(isUploadingPhoto)
+            .disabled(isUploadingPhoto || isRemovingPhoto)
+            .contextMenu {
+                if viewModel.user?.photoURL != nil {
+                    Button(role: .destructive) {
+                        showRemovePhotoAlert = true
+                    } label: {
+                        Label("Remove Photo", systemImage: "trash")
+                    }
+                }
+            }
             
             // Name
             Text(viewModel.user?.displayName ?? authViewModel.userDisplayName)

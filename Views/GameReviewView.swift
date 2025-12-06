@@ -26,16 +26,55 @@ struct GameReviewView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 
-                // Cover
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.backlogCard)
-                    .frame(height: 220)
-                    .overlay(
-                        Image(systemName: "gamecontroller.fill")
-                            .font(.system(size: 56))
-                            .foregroundColor(.backlogSecondary)
-                    )
-                    .padding(.top)
+                // Cover - clickable to navigate to game detail
+                NavigationLink {
+                    GameDetailView(game: game)
+                        .environmentObject(logStore)
+                } label: {
+                    if let coverURL = game.coverURL, let url = URL(string: coverURL) {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .empty:
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(Color.backlogCard)
+                                    .frame(height: 220)
+                                    .overlay(
+                                        ProgressView()
+                                            .tint(.backlogAccentRed)
+                                    )
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(height: 220)
+                                    .clipped()
+                                    .cornerRadius(20)
+                            case .failure:
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(Color.backlogCard)
+                                    .frame(height: 220)
+                                    .overlay(
+                                        Image(systemName: "gamecontroller.fill")
+                                            .font(.system(size: 56))
+                                            .foregroundColor(.backlogSecondary)
+                                    )
+                            @unknown default:
+                                EmptyView()
+                            }
+                        }
+                    } else {
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.backlogCard)
+                            .frame(height: 220)
+                            .overlay(
+                                Image(systemName: "gamecontroller.fill")
+                                    .font(.system(size: 56))
+                                    .foregroundColor(.backlogSecondary)
+                            )
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.top)
                 
                 // Game info
                 VStack(alignment: .leading, spacing: 8) {
@@ -189,13 +228,21 @@ struct GameReviewView: View {
 }
 
 #Preview {
-    NavigationStack {
+    let previewGame = Game(
+        id: 1,
+        title: "Elden Ring",
+        platforms: ["PS5", "Xbox Series X|S", "PC"],
+        genres: ["Action RPG", "Open World"],
+        description: "A dark fantasy open-world action RPG from FromSoftware.",
+        releaseYear: 2022
+    )
+    return NavigationStack {
         GameReviewView(
-            game: Game.mockGames[0],
+            game: previewGame,
             log: GameLog(
                 id: UUID().uuidString,
                 userID: "preview-user",
-                gameId: Game.mockGames[0].id,
+                gameId: previewGame.id,
                 status: .completed,
                 rating: 9,
                 reviewText: "Insanely challenging",

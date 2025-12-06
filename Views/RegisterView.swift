@@ -58,9 +58,9 @@ struct RegisterView: View {
                         HStack {
                             Image(systemName: "exclamationmark.circle.fill")
                                 .foregroundColor(.red)
-                            Text(errorMessage)
-                                .foregroundColor(.red)
-                                .font(.subheadline)
+                        Text(errorMessage)
+                            .foregroundColor(.red)
+                            .font(.subheadline)
                         }
                     }
                 }
@@ -70,9 +70,9 @@ struct RegisterView: View {
                         HStack {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundColor(.red)
-                            Text(authError)
-                                .foregroundColor(.red)
-                                .font(.subheadline)
+                        Text(authError)
+                            .foregroundColor(.red)
+                            .font(.subheadline)
                         }
                     }
                 }
@@ -88,8 +88,8 @@ struct RegisterView: View {
                             }
                             .padding(.vertical, 8)
                         } else {
-                            Text("Create Account")
-                                .frame(maxWidth: .infinity, alignment: .center)
+                        Text("Create Account")
+                            .frame(maxWidth: .infinity, alignment: .center)
                                 .foregroundColor(.backlogAccentRed)
                                 .font(.headline)
                         }

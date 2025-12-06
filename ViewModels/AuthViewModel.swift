@@ -94,9 +94,9 @@ final class AuthViewModel: ObservableObject {
                             if case .failure(let error) = result {
                                 print("Failed to create user document: \(error.localizedDescription)")
                             }
-                        }
                     }
-                    
+                }
+                
                     // Auth state listener will handle updating isAuthenticated
                 case .failure(let error):
                     self?.isLoading = false

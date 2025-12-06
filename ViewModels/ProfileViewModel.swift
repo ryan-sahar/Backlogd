@@ -132,7 +132,8 @@ final class ProfileViewModel: ObservableObject {
     /// Updates the user's profile photo URL.
     func updatePhotoURL(_ photoURL: String, userID: String, completion: @escaping (Result<Void, Error>) -> Void) {
         print("📝 ProfileViewModel: Updating photoURL to: \(photoURL)")
-        userService.updateUser(userID: userID, photoURL: photoURL) { [weak self] result in
+        // Wrap in .some() to explicitly set the photoURL
+        userService.updateUser(userID: userID, photoURL: .some(photoURL)) { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
                 case .success:
@@ -142,6 +143,26 @@ final class ProfileViewModel: ObservableObject {
                     completion(.success(()))
                 case .failure(let error):
                     print("❌ ProfileViewModel: Failed to update photoURL: \(error.localizedDescription)")
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+    
+    /// Removes the user's profile photo (sets photoURL to nil).
+    func removePhoto(userID: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        print("📝 ProfileViewModel: Removing photoURL")
+        // Pass .some(nil) to explicitly set photoURL to nil
+        userService.updateUser(userID: userID, photoURL: .some(nil)) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    print("✅ ProfileViewModel: photoURL removed from Firestore, reloading user...")
+                    // Reload user to get updated data
+                    self?.loadUser(userID: userID)
+                    completion(.success(()))
+                case .failure(let error):
+                    print("❌ ProfileViewModel: Failed to remove photoURL: \(error.localizedDescription)")
                     completion(.failure(error))
                 }
             }

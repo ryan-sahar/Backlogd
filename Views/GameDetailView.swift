@@ -19,13 +19,20 @@ struct GameDetailView: View {
     @State private var isShowingLogSheet = false
     @State private var isShowingShareSheet = false
     @State private var shareMessage = ""
+    @State private var displayedGame: Game
+    @State private var isFetchingDetails = false
+    
+    init(game: Game) {
+        self.game = game
+        _displayedGame = State(initialValue: game)
+    }
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 
                 // Cover
-                if let coverURL = game.coverURL {
+                if let coverURL = displayedGame.coverURL {
                     AsyncImage(url: URL(string: coverURL)) { phase in
                         switch phase {
                         case .empty:
@@ -58,31 +65,31 @@ struct GameDetailView: View {
                     }
                     .padding(.top)
                 } else {
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.backlogCard)
-                        .frame(height: 200)
-                        .overlay(
-                            Image(systemName: "gamecontroller.fill")
-                                .font(.system(size: 48))
-                                .foregroundColor(.backlogSecondary)
-                        )
-                        .padding(.top)
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.backlogCard)
+                    .frame(height: 200)
+                    .overlay(
+                        Image(systemName: "gamecontroller.fill")
+                            .font(.system(size: 48))
+                            .foregroundColor(.backlogSecondary)
+                    )
+                    .padding(.top)
                 }
                 
                 // Title / meta
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(game.title)
+                    Text(displayedGame.title)
                         .font(.title.bold())
                         .foregroundColor(.backlogPrimary)
                     
-                    if !game.platforms.isEmpty {
-                        Text(game.platforms.joined(separator: " · "))
+                    if !displayedGame.platforms.isEmpty {
+                        Text(displayedGame.platforms.joined(separator: " · "))
                             .font(.subheadline)
                             .foregroundColor(.backlogSecondary)
                     }
                     
-                    if !game.genres.isEmpty {
-                        Text(game.genres.joined(separator: " · "))
+                    if !displayedGame.genres.isEmpty {
+                        Text(displayedGame.genres.joined(separator: " · "))
                             .font(.subheadline)
                             .foregroundColor(.backlogSecondary)
                     }
@@ -96,9 +103,20 @@ struct GameDetailView: View {
                         .font(.headline)
                         .foregroundColor(.backlogPrimary)
                     
-                    Text(game.description)
-                        .font(.body)
-                        .foregroundColor(.backlogSecondary)
+                    if isFetchingDetails {
+                        HStack {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                                .tint(.backlogAccentRed)
+                            Text("Loading description...")
+                                .font(.body)
+                                .foregroundColor(.backlogSecondary)
+                        }
+                    } else {
+                        Text(displayedGame.description)
+                            .font(.body)
+                            .foregroundColor(.backlogSecondary)
+                    }
                 }
                 
                 Divider().background(Color.backlogCard)
@@ -109,9 +127,9 @@ struct GameDetailView: View {
                         .font(.headline)
                         .foregroundColor(.backlogPrimary)
                     
-                    if let log = logStore.log(for: game.id) {
+                    if let log = logStore.log(for: displayedGame.id) {
                         NavigationLink {
-                            GameReviewView(game: game, log: log)
+                            GameReviewView(game: displayedGame, log: log)
                         } label: {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(log.status.rawValue)
@@ -167,7 +185,7 @@ struct GameDetailView: View {
             .padding(.horizontal)
         }
         .background(Color.backlogBackground.ignoresSafeArea())
-        .navigationTitle(game.title)
+        .navigationTitle(displayedGame.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -180,7 +198,7 @@ struct GameDetailView: View {
             }
         }
         .sheet(isPresented: $isShowingLogSheet) {
-            GameLogSheet(game: game)
+            GameLogSheet(game: displayedGame)
                 .environmentObject(logStore)
         }
         .sheet(isPresented: $isShowingShareSheet) {
@@ -192,12 +210,48 @@ struct GameDetailView: View {
         }
         .onAppear {
             prepareShareContent()
+            // If description is missing or placeholder, fetch full game details
+            if displayedGame.description == "No description available." || displayedGame.description.isEmpty {
+                fetchGameDetails()
+            }
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func fetchGameDetails() {
+        // Don't fetch if already fetching
+        guard !isFetchingDetails else { return }
+        
+        isFetchingDetails = true
+        GameService.shared.fetchGame(byID: displayedGame.id) { result in
+            DispatchQueue.main.async {
+                isFetchingDetails = false
+                switch result {
+                case .success(let fetchedGame):
+                    displayedGame = fetchedGame
+                    // Update the log if it exists to store the full game metadata
+                    if let log = logStore.log(for: fetchedGame.id) {
+                        logStore.upsertLog(
+                            for: fetchedGame,
+                            status: log.status,
+                            rating: log.rating,
+                            reviewText: log.reviewText,
+                            playtimeHours: log.playtimeHours,
+                            location: log.location
+                        )
+                    }
+                case .failure:
+                    // Keep using the original game data
+                    break
+                }
+            }
         }
     }
     
     private func prepareShareContent() {
-        if let log = logStore.log(for: game.id) {
-            var shareText = "Just reviewed \(game.title) on Backlog'd!\n\n"
+        if let log = logStore.log(for: displayedGame.id) {
+            var shareText = "Just reviewed \(displayedGame.title) on Backlog'd!\n\n"
             
             shareText += "Status: \(log.status.rawValue)\n"
             
@@ -211,14 +265,21 @@ struct GameDetailView: View {
             
             shareMessage = shareText
         } else {
-            shareMessage = "Check out \(game.title) on Backlog'd!"
+            shareMessage = "Check out \(displayedGame.title) on Backlog'd!"
         }
     }
 }
 
 #Preview {
     NavigationStack {
-        GameDetailView(game: Game.mockGames[0])
+        GameDetailView(game: Game(
+            id: 1,
+            title: "Elden Ring",
+            platforms: ["PS5", "Xbox Series X|S", "PC"],
+            genres: ["Action RPG", "Open World"],
+            description: "A dark fantasy open-world action RPG from FromSoftware.",
+            releaseYear: 2022
+        ))
             .environmentObject(GameLogStore())
     }
 }

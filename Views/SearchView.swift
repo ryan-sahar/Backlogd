@@ -66,7 +66,7 @@ struct SearchView: View {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 Text("Searching...")
-                                    .font(.headline)
+                            .font(.headline)
                             }
                             .frame(maxWidth: .infinity)
                             .padding()
@@ -147,11 +147,11 @@ struct SearchView: View {
                                     .foregroundColor(.backlogPrimary)
                                 Text("Try a different search term or check your connection.")
                                     .font(.subheadline)
-                                    .foregroundColor(.backlogSecondary)
-                                    .multilineTextAlignment(.center)
+                            .foregroundColor(.backlogSecondary)
+                            .multilineTextAlignment(.center)
                             }
                         }
-                        .padding(.horizontal)
+                            .padding(.horizontal)
                         Spacer()
                     } else {
                         List(viewModel.results) { game in
@@ -268,13 +268,13 @@ struct GameRowView: View {
                     }
                 }
             } else {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.backlogCard)
-                    .frame(width: 56, height: 56)
-                    .overlay(
-                        Image(systemName: "gamecontroller")
-                            .foregroundColor(.backlogSecondary)
-                    )
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.backlogCard)
+                .frame(width: 56, height: 56)
+                .overlay(
+                    Image(systemName: "gamecontroller")
+                        .foregroundColor(.backlogSecondary)
+                )
             }
             
             VStack(alignment: .leading, spacing: 4) {
